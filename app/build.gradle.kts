@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp") version "2.0.21-1.0.27"
 }
 
 android {
@@ -53,8 +54,17 @@ dependencies {
     // optional - Multiprocess support
     implementation(libs.androidx.work.multiprocess)
 
-    implementation(libs.retrofit)
-    implementation(libs.moshi)
+    //moshi
+    implementation (libs.moshi.kotlin)
+    implementation (libs.moshi)
+    ksp (libs.moshi.kotlin.codegen)
+
+    //retrofit
+    implementation (libs.retrofit)
+    implementation (libs.converter.moshi.v2110)
+    implementation(libs.okhttp)
+    implementation(libs.logging.interceptor)
+
 
     // Default Dependencies
     implementation(libs.androidx.core.ktx)
