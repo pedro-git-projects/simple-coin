@@ -3,8 +3,11 @@ package dev.niltptr
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.util.Log
 import android.widget.RemoteViews
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
@@ -39,23 +42,36 @@ class CurrencyWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        // You can trigger an immediate update here if desired.
-        // For now, the WorkManager will handle periodic updates.
+        Log.d("CurrencyWidgetProvider", "onUpdate called for widget IDs: ${appWidgetIds.joinToString()}")
+
+        // Schedule periodic updates (if not already scheduled)
+        scheduleWidgetUpdates(context)
+
+        // Update the widget with a "Fetching..." placeholder
+        for (widgetId in appWidgetIds) {
+            updateAppWidget(context, appWidgetManager, widgetId, "Fetching...")
+        }
+
+        // Enqueue a unique one-time work request so that only one is active at a time
+        WorkManager.getInstance(context)
+            .enqueueUniqueWork(
+                "CurrencyUpdateNow",
+                ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<CurrencyUpdateWorker>().build()
+            )
+        Log.d("CurrencyWidgetProvider", "Enqueued unique one-time CurrencyUpdateWorker")
     }
 
     override fun onEnabled(context: Context) {
-        // Called when the first widget is added.
         scheduleWidgetUpdates(context)
     }
 
     override fun onDisabled(context: Context) {
-        // Called when the last widget is removed.
         WorkManager.getInstance(context).cancelUniqueWork("WidgetUpdateWork")
     }
 
     private fun scheduleWidgetUpdates(context: Context) {
-        // Schedule a periodic worker to update the widget (e.g., every 1 hour)
-        val workRequest = PeriodicWorkRequestBuilder<CurrencyUpdateWorker>(1, TimeUnit.HOURS)
+        val workRequest = PeriodicWorkRequestBuilder<CurrencyUpdateWorker>(24, TimeUnit.HOURS)
             .build()
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             "WidgetUpdateWork",
